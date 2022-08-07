@@ -2,14 +2,23 @@ import configparser
 from bs4 import BeautifulSoup
 import requests
 from googletrans import Translator
+from telegram import Update
+from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
 
 
 class TelegramBot():
     def __init__(self):
         print('Telegram Bot')
+        self.app = ApplicationBuilder().token("YOUR TOKEN HERE").build()
+
+    async def hello(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+        await update.message.reply_text(f'Hello {update.effective_user.first_name}')
 
     def run(self):
         print('Telegram Run')
+
+        self.app.add_handler(CommandHandler("hello", self.hello))
+        self.app.run_polling()
 
 
 class FindRoom():
@@ -62,6 +71,7 @@ class LetThereBeRoom():
         self.target_lang = config['Translate']['target']
 
         self.findRoom = FindRoom(self.url, self.target_lang)
+        self.telegramBot = TelegramBot()
 
     def checkNewPostings(self):
         print("Check New Postings")
@@ -72,6 +82,7 @@ class LetThereBeRoom():
 
     def sendTelegramRequest(self):
         print("SendTelegramRequest")
+        self.telegramBot.run()
 
     def run(self):
         print("Start Main Process")
