@@ -2,23 +2,30 @@ import configparser
 from bs4 import BeautifulSoup
 import requests
 from googletrans import Translator
-from telegram import Update
-from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
+import telebot
 
 
 class TelegramBot():
-    def __init__(self):
+    def __init__(self, token):
         print('Telegram Bot')
-        self.app = ApplicationBuilder().token("YOUR TOKEN HERE").build()
+        self.bot = telebot.TeleBot(token, parse_mode=None)
 
-    async def hello(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-        await update.message.reply_text(f'Hello {update.effective_user.first_name}')
+        @self.bot.message_handler(commands=['start', 'help'])
+        def send_welcome(message):
+            self.bot.reply_to(
+                message, "Merhaba, bot sistemimiz aktif hale gelmistir, bildirimleri bekleyin lutfen!")
+
+            self.msg_id = message.chat.id
+            self.bot.send_message(self.msg_id, "alakasiz")
+
+        @self.bot.message_handler()
+        def echo_all(message):
+            self.bot.reply_to(
+                message, 'Maalesef sadece size yeni ilanlari haber verebiliyorum :(')
 
     def run(self):
         print('Telegram Run')
-
-        self.app.add_handler(CommandHandler("hello", self.hello))
-        self.app.run_polling()
+        self.bot.infinity_polling()
 
 
 class FindRoom():
@@ -69,9 +76,10 @@ class LetThereBeRoom():
 
         self.url = config['WEB']['url']
         self.target_lang = config['Translate']['target']
+        self.token = config['Bot']['token']
 
         self.findRoom = FindRoom(self.url, self.target_lang)
-        self.telegramBot = TelegramBot()
+        self.telegramBot = TelegramBot(self.token)
 
     def checkNewPostings(self):
         print("Check New Postings")
